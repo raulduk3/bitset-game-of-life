@@ -1,7 +1,7 @@
 # Variables
 CXX = g++
 CXXFLAGS = -std=c++17 -O3 -Wall
-TARGET = build/cellular_automaton
+TARGET = cellular_automaton
 SRCS = main.cpp
 OBJS = $(SRCS:.cpp=.o)
 
