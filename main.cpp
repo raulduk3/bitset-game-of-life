@@ -6,11 +6,11 @@
 #include <cstring>
 #include <cstdlib>
 
-template <size_t Width, size_t Height>
+template <int Width, int Height>
 class CellularAutomaton
 {
 public:
-    static constexpr size_t GridSize = Width * Height;
+    static constexpr int GridSize = Width * Height;
 
     CellularAutomaton(int s)
         : speed(s)
@@ -30,7 +30,7 @@ public:
             std::cout << "\033[H";
 
             auto startIter = std::chrono::high_resolution_clock::now();
-            update();
+            bool isAlive = update();
             auto endIter = std::chrono::high_resolution_clock::now();
 
             if (displayEnabled)
@@ -39,14 +39,15 @@ public:
                 std::this_thread::sleep_for(std::chrono::milliseconds(speed));
             }
 
-            auto iterDuration = std::chrono::duration_cast<std::chrono::microseconds>(endIter - startIter);
-            std::cout << "Iteration " << iteration + 1 << ": " << iterDuration.count() << " microseconds\n";
-
-            if (isBoardDead())
+            if (isAlive == false)
             {
                 std::cout << "Board has reached a stable or alternating state.\n";
                 break;
             }
+
+            auto iterDuration = std::chrono::duration_cast<std::chrono::microseconds>(endIter - startIter);
+            std::cout << "Iteration " << iteration + 1 << ": " << iterDuration.count() << " microseconds\n";
+
 
             iteration++;
             std::cout << std::flush;
@@ -67,21 +68,21 @@ private:
     void initializeRandom()
     {
         srand(time(0));
-        for (size_t i = 0; i < GridSize; ++i)
+        for (int i = 0; i < GridSize; ++i)
         {
             grid[i] = rand() % 2;
         }
     }
 
-    void update()
+    bool update()
     {
         nextGrid.reset(); 
 
-        for (size_t y = 0; y < Height; ++y)
+        for (int y = 0; y < Height; ++y)
         {
-            for (size_t x = 0; x < Width; ++x)
+            for (int x = 0; x < Width; ++x)
             {
-                size_t index = y * Width + x;
+                int index = y * Width + x;
                 int liveNeighbors = countLiveNeighbors(x, y);
 
                 bool alive = grid[index];
@@ -90,8 +91,16 @@ private:
             }
         }
 
+        if((nextGrid == prevGrid) || (nextGrid == grid))
+        {
+            return false;
+        }
+
         prevGrid = grid; 
         grid = nextGrid; 
+
+        return true;
+
     }
 
     int countLiveNeighbors(int x, int y) const
@@ -118,16 +127,11 @@ private:
         return count;
     }
 
-    bool isBoardDead() const
-    {
-        return (grid == prevGrid);
-    }
-
     void display() const
     {
-        for (size_t y = 0; y < Height; ++y)
+        for (int y = 0; y < Height; ++y)
         {
-            for (size_t x = 0; x < Width; ++x)
+            for (int x = 0; x < Width; ++x)
             {
                 std::cout << (grid[y * Width + x] ? "\033[38;5;82m◆\033[0m" : " ");
             }
